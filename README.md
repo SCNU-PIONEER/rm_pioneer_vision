@@ -38,12 +38,12 @@
     
     基础镜像（不含rviz2/rqt等工具）：
     ```bash
-    docker pull ghcr.io/chenjunnn/rm_pioneer_vision:base
+    docker pull ghcr.io/scnu-pioneer/rm_pioneer_vision:base
     ```
 
     桌面镜像：
     ```bash
-    docker pull ghcr.io/chenjunnn/rm_pioneer_vision:desktop
+    docker pull ghcr.io/scnu-pioneer/rm_pioneer_vision:desktop
     ```
 
 4. 创建容器并运行
@@ -53,7 +53,7 @@
     docker run --name vision --restart always --privileged \
     -v /dev/bus/usb:/dev/bus/usb --network host \
     -v $HOME/config:/root/ros_ws/src/rm_pioneer_config \
-    -e ROBOT=standard3 -it ghcr.io/chenjunnn/rm_pioneer_vision:base
+    -e ROBOT=standard3 -it ghcr.io/scnu-pioneer/rm_pioneer_vision:base
     ```
     
     桌面镜像：
@@ -62,7 +62,7 @@
     -v /dev/bus/usb:/dev/bus/usb --network host \
     -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v $HOME/config:/root/ros_ws/src/rm_pioneer_config \
-    -e ROBOT=standard3 -it ghcr.io/chenjunnn/rm_pioneer_vision:desktop
+    -e ROBOT=standard3 -it ghcr.io/scnu-pioneer/rm_pioneer_vision:desktop
     ```
     Tips: 
     - desktop镜像需要在图形化界面中启动容器，否则在容器内无法正常使用 GUI
