@@ -50,7 +50,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/chenjunnn/rm_pioneer_vision:base
+          tags: ghcr.io/scnu-pioneer/rm_pioneer_vision:base
 
       - name: Build and push desktop image
         uses: docker/build-push-action@v2
@@ -58,5 +58,5 @@ jobs:
           context: .
           push: true
           build-args: BASE_IMAGE=osrf/ros:galactic-desktop
-          tags: ghcr.io/chenjunnn/rm_pioneer_vision:desktop, 
-                ghcr.io/chenjunnn/rm_pioneer_vision:latest
+          tags: ghcr.io/scnu-pioneer/rm_pioneer_vision:desktop, 
+                ghcr.io/scnu-pioneer/rm_pioneer_vision:latest
