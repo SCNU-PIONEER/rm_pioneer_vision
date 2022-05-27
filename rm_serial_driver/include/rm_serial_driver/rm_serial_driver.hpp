@@ -38,8 +38,10 @@ private:
   void reopenPort();
 
   void requestforChangeColor(uint8_t color);
+  void requestforChangeMode(uint8_t mode);
 
   bool present_color_;
+  bool present_mode_;
 
   std::unique_ptr<IoContext> owned_ctx_;
   std::string device_name_;

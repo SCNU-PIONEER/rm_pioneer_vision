@@ -281,6 +281,29 @@ void RMSerialDriver::requestforChangeColor(uint8_t color)
   }
 }
 
+void RMSerialDriver::requestforChangeMode(uint8_t mode)
+{
+  bool set_auto_aim_success = false;
+  // Parameter Client
+  if (auto_aim_param_client_->service_is_ready()) {
+    auto_aim_param_client_->set_parameters(
+      {rclcpp::Parameter("active", mode ? false : true)},
+      [&](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+        future.wait();
+        auto results = future.get();
+        set_auto_aim_success = results[0].successful;
+      });
+    if (set_auto_aim_success) {
+      present_mode_ = mode;
+      RCLCPP_INFO(get_logger(), "Successfully set mode: %d", mode);
+    } else {
+      RCLCPP_ERROR(get_logger(), "Failed to set mode");
+    }
+  } else {
+    RCLCPP_ERROR(get_logger(), "remote parameter server is not ready");
+    rclcpp::sleep_for(std::chrono::seconds(1));
+  }
+}
 }  // namespace rm_serial_driver
 
 #include "rclcpp_components/register_node_macro.hpp"
