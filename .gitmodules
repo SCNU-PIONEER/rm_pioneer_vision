@@ -1,3 +1,6 @@
 [submodule "rm_auto_aim"]
 	path = rm_auto_aim
 	url = https://github.com/chenjunnn/rm_auto_aim
+[submodule "energy_predictor"]
+	path = energy_predictor
+	url = https://github.com/nolem-77/energy_predictor.git
