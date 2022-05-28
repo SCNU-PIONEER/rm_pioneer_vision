@@ -23,7 +23,8 @@ namespace rm_serial_driver
 {
 RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
 : Node("rm_serial_driver", options),
-  present_color_(-1),
+  present_color_(1),
+  present_mode_(0),
   owned_ctx_{new IoContext(2)},
   serial_driver_{new drivers::serial_driver::SerialDriver(*owned_ctx_)}
 {
@@ -36,19 +37,17 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
     "/joint_states", rclcpp::QoS(rclcpp::KeepLast(1)));
 
   auto_aim_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "armor_detector");
+  energy_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "energy_predictor");
 
   // get remote parameters
   RCLCPP_INFO(this->get_logger(), "Try to get remote param");
-  while (!auto_aim_param_client_->service_is_ready()) {
+  while ((!auto_aim_param_client_->service_is_ready()) &&
+         (!energy_param_client_->service_is_ready())) {
     rclcpp::sleep_for(std::chrono::seconds(1));
   }
-  auto_aim_param_client_->get_parameters(
-    {"detect_color"}, [this](std::shared_future<std::vector<rclcpp::Parameter>> future) {
-      future.wait();
-      auto result = future.get();
-      present_color_ = result.at(0).as_int();
-      RCLCPP_INFO(this->get_logger(), "Present color: %d.", present_color_);
-    });
+
+  requestforChangeColor(present_color_);
+  requestforChangeMode(present_mode_);
 
   try {
     serial_driver_->init_port(device_name_, *device_config_);
@@ -116,6 +115,9 @@ void RMSerialDriver::receiveData()
 
           if (packet.robot_color != present_color_) {
             requestforChangeColor(packet.robot_color);
+          }
+          if (packet.task_mode != present_mode_) {
+            requestforChangeMode(packet.task_mode);
           }
         } else {
           RCLCPP_ERROR(get_logger(), "CRC error!");
@@ -260,6 +262,7 @@ void RMSerialDriver::reopenPort()
 void RMSerialDriver::requestforChangeColor(uint8_t color)
 {
   bool set_auto_aim_success = false;
+  bool set_energy_success = false;
   // Parameter Client
   if (auto_aim_param_client_->service_is_ready()) {
     auto_aim_param_client_->set_parameters(
@@ -276,7 +279,26 @@ void RMSerialDriver::requestforChangeColor(uint8_t color)
       RCLCPP_ERROR(get_logger(), "Failed to set color");
     }
   } else {
-    RCLCPP_ERROR(get_logger(), "remote parameter server is not ready");
+    RCLCPP_ERROR(get_logger(), "auto aim parameter server is not ready");
+    rclcpp::sleep_for(std::chrono::seconds(1));
+  }
+
+  if (energy_param_client_->service_is_ready()) {
+    energy_param_client_->set_parameters(
+      {rclcpp::Parameter("detect_color", color == 0 ? 1 : 0)},
+      [&](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+        future.wait();
+        auto results = future.get();
+        set_energy_success = results[0].successful;
+      });
+    if (set_energy_success) {
+      present_color_ = color;
+      RCLCPP_INFO(get_logger(), "Successfully set color: %d", color);
+    } else {
+      RCLCPP_ERROR(get_logger(), "Failed to set color");
+    }
+  } else {
+    RCLCPP_ERROR(get_logger(), "auto aim parameter server is not ready");
     rclcpp::sleep_for(std::chrono::seconds(1));
   }
 }
@@ -284,7 +306,7 @@ void RMSerialDriver::requestforChangeColor(uint8_t color)
 void RMSerialDriver::requestforChangeMode(uint8_t mode)
 {
   bool set_auto_aim_success = false;
-  // Parameter Client
+  bool set_energy_success = false;
   if (auto_aim_param_client_->service_is_ready()) {
     auto_aim_param_client_->set_parameters(
       {rclcpp::Parameter("active", mode ? false : true)},
@@ -295,12 +317,31 @@ void RMSerialDriver::requestforChangeMode(uint8_t mode)
       });
     if (set_auto_aim_success) {
       present_mode_ = mode;
-      RCLCPP_INFO(get_logger(), "Successfully set mode: %d", mode);
+      RCLCPP_INFO(get_logger(), "Successfully set auto aim mode: %d", mode);
     } else {
-      RCLCPP_ERROR(get_logger(), "Failed to set mode");
+      RCLCPP_ERROR(get_logger(), "Failed to set auto aim active");
     }
   } else {
-    RCLCPP_ERROR(get_logger(), "remote parameter server is not ready");
+    RCLCPP_ERROR(get_logger(), "auto aim parameter server is not ready");
+    rclcpp::sleep_for(std::chrono::seconds(1));
+  }
+
+  if (energy_param_client_->service_is_ready()) {
+    energy_param_client_->set_parameters(
+      {rclcpp::Parameter("task_mode", mode)},
+      [&](std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>> future) {
+        future.wait();
+        auto results = future.get();
+        set_energy_success = results[0].successful;
+      });
+    if (set_energy_success) {
+      present_mode_ = mode;
+      RCLCPP_INFO(get_logger(), "Successfully set energy mode: %d", mode);
+    } else {
+      RCLCPP_ERROR(get_logger(), "Failed to set energy mode");
+    }
+  } else {
+    RCLCPP_ERROR(get_logger(), "energy parameter server is not ready");
     rclcpp::sleep_for(std::chrono::seconds(1));
   }
 }

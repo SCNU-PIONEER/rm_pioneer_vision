@@ -41,7 +41,7 @@ private:
   void requestforChangeMode(uint8_t mode);
 
   bool present_color_;
-  bool present_mode_;
+  int present_mode_;
 
   std::unique_ptr<IoContext> owned_ctx_;
   std::string device_name_;
@@ -54,6 +54,7 @@ private:
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr latency_pub_;
 
   rclcpp::AsyncParametersClient::SharedPtr auto_aim_param_client_;
+  rclcpp::AsyncParametersClient::SharedPtr energy_param_client_;
 
   std::thread receive_thread_;
 };
