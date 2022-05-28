@@ -17,9 +17,13 @@ case $ROBOT in
         export ROS_DOMAIN_ID=5
         camera_type=mindvision
         ;;
-    guard)
+    guard_top)
         export ROS_DOMAIN_ID=6
         camera_type=mindvision
+        ;;
+    guard_bottom)
+        export ROS_DOMAIN_ID=7
+        camera_type=realsense
         ;;
     *)
         echo "Unknown robot type: $ROBOT"
